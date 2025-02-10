@@ -24,6 +24,7 @@ func (h *DeviceHandler) RegisterRoutes(router chi.Router) {
 	router.Get("/device", h.GetDeviceFromID)
 	router.Get("/devices", h.GetDevices)
 	router.Get("/paged_devices", h.GetPagedDevices)
+	router.Delete("/device/{id}", h.DeleteDevice)
 }
 
 func (h *DeviceHandler) CreateDevice(w http.ResponseWriter, r *http.Request) {
@@ -146,23 +147,26 @@ func (h *DeviceHandler) GetPagedDevices(w http.ResponseWriter, r *http.Request) 
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&params); err != nil {
 		httpresponses.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("failed to decode request body"))
+		return
 	}
 	ctx := r.Context()
 	devicesPage, err := h.service.GetPagedDevices(ctx, params.Offset, params.Limit)
 	if err != nil {
 		httpresponses.RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 	httpresponses.RespondWithJson(w, http.StatusOK, devicesPage)
 }
 
 func (h *DeviceHandler) DeleteDevice(w http.ResponseWriter, r *http.Request) {
-	deviceID := chi.URLParam(r, "device_id")
+	deviceID := chi.URLParam(r, "id")
 
 	ctx := r.Context()
 
 	err := h.service.DeleteDevice(ctx, deviceID)
 	if err != nil {
 		httpresponses.RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 	httpresponses.RespondWithJson(w, http.StatusNoContent, fmt.Sprintf("Device successfully deleted"))
 }
