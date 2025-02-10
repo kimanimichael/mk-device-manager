@@ -40,6 +40,11 @@ func (h *DeviceHandler) CreateDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(params.Serial) < 10 || len(params.UID) < 10 {
+		httpresponses.RespondWithError(w, http.StatusBadRequest, "Each of serial and uid must be longer than 10 characters")
+		return
+	}
+
 	ctx := r.Context()
 
 	device, err := h.service.CreateDevice(ctx, params.UID, params.Serial)
@@ -71,7 +76,7 @@ func (h *DeviceHandler) GetDeviceFromID(w http.ResponseWriter, r *http.Request) 
 		httpresponses.RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	httpresponses.RespondWithJson(w, http.StatusCreated, deviceToDeviceResponse(*device))
+	httpresponses.RespondWithJson(w, http.StatusOK, deviceToDeviceResponse(*device))
 }
 
 func (h *DeviceHandler) GetDeviceFromUID(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +100,7 @@ func (h *DeviceHandler) GetDeviceFromUID(w http.ResponseWriter, r *http.Request)
 		httpresponses.RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	httpresponses.RespondWithJson(w, http.StatusCreated, deviceToDeviceResponse(*device))
+	httpresponses.RespondWithJson(w, http.StatusOK, deviceToDeviceResponse(*device))
 }
 
 func (h *DeviceHandler) GetDeviceFromSerial(w http.ResponseWriter, r *http.Request) {
@@ -119,7 +124,7 @@ func (h *DeviceHandler) GetDeviceFromSerial(w http.ResponseWriter, r *http.Reque
 		httpresponses.RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	httpresponses.RespondWithJson(w, http.StatusCreated, deviceToDeviceResponse(*device))
+	httpresponses.RespondWithJson(w, http.StatusOK, deviceToDeviceResponse(*device))
 }
 
 func (h *DeviceHandler) GetDevices(w http.ResponseWriter, r *http.Request) {
@@ -132,7 +137,7 @@ func (h *DeviceHandler) GetDevices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpresponses.RespondWithJson(w, http.StatusCreated, devicesToDevicesResponse(devicesResponse))
+	httpresponses.RespondWithJson(w, http.StatusOK, devicesToDevicesResponse(devicesResponse))
 }
 
 func (h *DeviceHandler) GetPagedDevices(w http.ResponseWriter, r *http.Request) {
