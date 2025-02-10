@@ -6,7 +6,7 @@ type CreateDeviceRequest struct {
 }
 
 type GetDeviceByIDRequest struct {
-	ID string `json:"device_id"`
+	ID string `json:"id"`
 }
 
 type GetDeviceByUIDRequest struct {

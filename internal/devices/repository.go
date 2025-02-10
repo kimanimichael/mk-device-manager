@@ -138,6 +138,12 @@ func (r *DeviceRepositorySQL) DeleteDevice(ctx context.Context, ID string) error
 	if err != nil {
 		return fmt.Errorf("failed to parse device UUID: %v", err)
 	}
+
+	_, err = r.DB.GetDeviceByID(ctx, deviceID)
+	if err != nil {
+		return fmt.Errorf("error getting device from ID: %v", err)
+	}
+
 	err = r.DB.DeleteDevice(ctx, deviceID)
 	if err != nil {
 		return fmt.Errorf("failed to delete device: %v", err)
