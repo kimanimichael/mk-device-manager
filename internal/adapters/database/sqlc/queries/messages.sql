@@ -7,7 +7,7 @@ VALUES($1, $2, $3, $4
 -- name: GetMessageByID :one
 SELECT * FROM messages WHERE id = $1;
 
--- name: GetMessageByDeviceUID :one
+-- name: GetMessagesByDeviceUID :many
 SELECT * FROM messages WHERE device_uid = $1;
 
 -- name: GetMessages :many

@@ -26,6 +26,7 @@ func NewMessageHandler(service messages.MessageService, deviceService devices.De
 func (h *MessageHandler) RegisterRoutes(router chi.Router) {
 	router.Post("/message/{uid}", h.CreateMessage)
 	router.Get("/message", h.GetMessageByID)
+	router.Get("/messages/{uid}", h.GetDeviceMessagesByUID)
 }
 
 func (h *MessageHandler) CreateMessage(w http.ResponseWriter, r *http.Request) {
@@ -90,4 +91,26 @@ func (h *MessageHandler) GetMessageByID(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	httpresponses.RespondWithJson(w, http.StatusOK, messageToMessageResponse(*message))
+}
+
+func (h *MessageHandler) GetDeviceMessagesByUID(w http.ResponseWriter, r *http.Request) {
+	uid := chi.URLParam(r, "uid")
+	if uid == "" {
+		httpresponses.RespondWithError(w, http.StatusBadRequest, "Missing UID")
+		return
+	}
+
+	ctx := r.Context()
+	_, err := h.deviceService.GetDeviceByUID(ctx, uid)
+	if err != nil {
+		httpresponses.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	returnedMessages, err := h.service.GetMessagesByUID(ctx, uid)
+	if err != nil {
+		httpresponses.RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	httpresponses.RespondWithJson(w, http.StatusOK, returnedMessages)
 }

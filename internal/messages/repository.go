@@ -54,3 +54,20 @@ func (r *MessageRepositorySQL) GetMessageByID(ctx context.Context, ID string) (*
 		message.DeviceUid,
 	}, nil
 }
+
+func (r *MessageRepositorySQL) GetMessagesByUID(ctx context.Context, UID string) ([]Message, error) {
+	messages, err := r.DB.GetMessagesByDeviceUID(ctx, UID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create device: %v", err)
+	}
+	var messagesToReturn []Message
+	for _, message := range messages {
+		messagesToReturn = append(messagesToReturn, Message{
+			ID:        message.ID.String(),
+			CreatedAt: message.CreatedAt,
+			Payload:   message.Payload,
+			DeviceUID: message.DeviceUid,
+		})
+	}
+	return messagesToReturn, nil
+}

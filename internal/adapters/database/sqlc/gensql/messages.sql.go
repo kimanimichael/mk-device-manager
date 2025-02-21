@@ -53,22 +53,6 @@ func (q *Queries) DeleteMessage(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
-const getMessageByDeviceUID = `-- name: GetMessageByDeviceUID :one
-SELECT id, created_at, payload, device_uid FROM messages WHERE device_uid = $1
-`
-
-func (q *Queries) GetMessageByDeviceUID(ctx context.Context, deviceUid string) (Message, error) {
-	row := q.db.QueryRowContext(ctx, getMessageByDeviceUID, deviceUid)
-	var i Message
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.Payload,
-		&i.DeviceUid,
-	)
-	return i, err
-}
-
 const getMessageByID = `-- name: GetMessageByID :one
 SELECT id, created_at, payload, device_uid FROM messages WHERE id = $1
 `
@@ -92,6 +76,38 @@ ORDER BY created_at ASC
 
 func (q *Queries) GetMessages(ctx context.Context) ([]Message, error) {
 	rows, err := q.db.QueryContext(ctx, getMessages)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Message
+	for rows.Next() {
+		var i Message
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.Payload,
+			&i.DeviceUid,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getMessagesByDeviceUID = `-- name: GetMessagesByDeviceUID :many
+SELECT id, created_at, payload, device_uid FROM messages WHERE device_uid = $1
+`
+
+func (q *Queries) GetMessagesByDeviceUID(ctx context.Context, deviceUid string) ([]Message, error) {
+	rows, err := q.db.QueryContext(ctx, getMessagesByDeviceUID, deviceUid)
 	if err != nil {
 		return nil, err
 	}
