@@ -5,6 +5,7 @@
 package sqlcdatabase
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,4 +17,11 @@ type Device struct {
 	UpdatedAt time.Time
 	Uid       string
 	Serial    string
+}
+
+type Message struct {
+	ID        uuid.UUID
+	CreatedAt time.Time
+	Payload   json.RawMessage
+	DeviceUid string
 }

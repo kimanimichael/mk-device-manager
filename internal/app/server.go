@@ -8,6 +8,8 @@ import (
 	"github.com/kimanimichael/mk-device-manager/internal/adapters/database/sqlc/gensql"
 	"github.com/kimanimichael/mk-device-manager/internal/devices"
 	"github.com/kimanimichael/mk-device-manager/internal/devices/api"
+	"github.com/kimanimichael/mk-device-manager/internal/messages"
+	messagesapi "github.com/kimanimichael/mk-device-manager/internal/messages/api"
 	"log"
 	"net/http"
 	"os"
@@ -31,8 +33,10 @@ func NewServer() *http.Server {
 
 	db := sqlcdatabase.New(conn)
 	deviceRepoSQL := devices.NewDeviceRepositorySQL(db)
+	messageRepoSQL := messages.NewMessageRepositorySQL(db)
 
 	deviceService := devices.NewDeviceService(deviceRepoSQL)
+	messageService := messages.NewMessageService(messageRepoSQL)
 
 	router := chi.NewRouter()
 	router.Use(cors.Handler(cors.Options{
@@ -45,6 +49,9 @@ func NewServer() *http.Server {
 
 	deviceHandler := devicesapi.NewDeviceHandler(deviceService)
 	deviceHandler.RegisterRoutes(router)
+
+	messageHandler := messagesapi.NewMessageHandler(messageService)
+	messageHandler.RegisterRoutes(router)
 
 	actualRouter := chi.NewRouter()
 	actualRouter.Mount("/mk", router)
