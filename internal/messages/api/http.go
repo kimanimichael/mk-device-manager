@@ -16,9 +16,10 @@ type MessageHandler struct {
 	deviceService devices.DeviceService
 }
 
-func NewMessageHandler(service messages.MessageService) *MessageHandler {
+func NewMessageHandler(service messages.MessageService, deviceService devices.DeviceService) *MessageHandler {
 	return &MessageHandler{
-		service: service,
+		service:       service,
+		deviceService: deviceService,
 	}
 }
 
@@ -35,7 +36,6 @@ func (h *MessageHandler) CreateMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-
 	_, err := h.deviceService.GetDeviceByUID(ctx, uid)
 	if err != nil {
 		httpresponses.RespondWithError(w, http.StatusBadRequest, err.Error())

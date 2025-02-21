@@ -50,7 +50,7 @@ func NewServer() *http.Server {
 	deviceHandler := devicesapi.NewDeviceHandler(deviceService)
 	deviceHandler.RegisterRoutes(router)
 
-	messageHandler := messagesapi.NewMessageHandler(messageService)
+	messageHandler := messagesapi.NewMessageHandler(messageService, deviceService)
 	messageHandler.RegisterRoutes(router)
 
 	actualRouter := chi.NewRouter()
