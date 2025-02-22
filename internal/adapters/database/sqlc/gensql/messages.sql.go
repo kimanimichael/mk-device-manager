@@ -104,10 +104,17 @@ func (q *Queries) GetMessages(ctx context.Context) ([]Message, error) {
 
 const getMessagesByDeviceUID = `-- name: GetMessagesByDeviceUID :many
 SELECT id, created_at, payload, device_uid FROM messages WHERE device_uid = $1
+ORDER BY created_at DESC OFFSET $2 LIMIT $3
 `
 
-func (q *Queries) GetMessagesByDeviceUID(ctx context.Context, deviceUid string) ([]Message, error) {
-	rows, err := q.db.QueryContext(ctx, getMessagesByDeviceUID, deviceUid)
+type GetMessagesByDeviceUIDParams struct {
+	DeviceUid string
+	Offset    int32
+	Limit     int32
+}
+
+func (q *Queries) GetMessagesByDeviceUID(ctx context.Context, arg GetMessagesByDeviceUIDParams) ([]Message, error) {
+	rows, err := q.db.QueryContext(ctx, getMessagesByDeviceUID, arg.DeviceUid, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}

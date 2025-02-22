@@ -55,8 +55,12 @@ func (r *MessageRepositorySQL) GetMessageByID(ctx context.Context, ID string) (*
 	}, nil
 }
 
-func (r *MessageRepositorySQL) GetMessagesByUID(ctx context.Context, UID string) ([]Message, error) {
-	messages, err := r.DB.GetMessagesByDeviceUID(ctx, UID)
+func (r *MessageRepositorySQL) GetMessagesByUID(ctx context.Context, UID string, offset, limit uint32) (*MessagePage, error) {
+	messages, err := r.DB.GetMessagesByDeviceUID(ctx, sqlcdatabase.GetMessagesByDeviceUIDParams{
+		DeviceUid: UID,
+		Offset:    int32(offset),
+		Limit:     int32(limit),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create device: %v", err)
 	}
@@ -69,5 +73,15 @@ func (r *MessageRepositorySQL) GetMessagesByUID(ctx context.Context, UID string)
 			DeviceUID: message.DeviceUid,
 		})
 	}
-	return messagesToReturn, nil
+	totalMessages, err := r.DB.GetMessagesCount(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get total messages: %v", err)
+	}
+	messagePage := &MessagePage{
+		page{
+			Offset: 1,
+			Total:  uint32(totalMessages),
+		}, messagesToReturn,
+	}
+	return messagePage, nil
 }

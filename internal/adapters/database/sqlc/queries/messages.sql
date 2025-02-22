@@ -8,7 +8,8 @@ VALUES($1, $2, $3, $4
 SELECT * FROM messages WHERE id = $1;
 
 -- name: GetMessagesByDeviceUID :many
-SELECT * FROM messages WHERE device_uid = $1;
+SELECT * FROM messages WHERE device_uid = $1
+ORDER BY created_at DESC OFFSET $2 LIMIT $3;
 
 -- name: GetMessages :many
 SELECT * FROM messages

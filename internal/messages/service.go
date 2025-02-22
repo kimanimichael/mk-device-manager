@@ -28,8 +28,8 @@ func (s *messageService) GetMessageByID(ctx context.Context, ID string) (*Messag
 	return message, nil
 }
 
-func (s *messageService) GetMessagesByUID(ctx context.Context, UID string) ([]Message, error) {
-	messages, err := s.repo.GetMessagesByUID(ctx, UID)
+func (s *messageService) GetMessagesByUID(ctx context.Context, UID string, offset, limit uint32) (*MessagePage, error) {
+	messages, err := s.repo.GetMessagesByUID(ctx, UID, offset, limit)
 	if err != nil {
 		return nil, err
 	}

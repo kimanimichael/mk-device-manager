@@ -100,6 +100,17 @@ func (h *MessageHandler) GetDeviceMessagesByUID(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	params := GetMessagesByUIDRequest{}
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&params); err != nil {
+		httpresponses.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("Request body could not be decoded as JSON: %v", err))
+		return
+	}
+	if params.Limit == 0 {
+		httpresponses.RespondWithError(w, http.StatusBadRequest, "Limit field is required")
+		return
+	}
+
 	ctx := r.Context()
 	_, err := h.deviceService.GetDeviceByUID(ctx, uid)
 	if err != nil {
@@ -107,7 +118,7 @@ func (h *MessageHandler) GetDeviceMessagesByUID(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	returnedMessages, err := h.service.GetMessagesByUID(ctx, uid)
+	returnedMessages, err := h.service.GetMessagesByUID(ctx, uid, params.Offset, params.Limit)
 	if err != nil {
 		httpresponses.RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
