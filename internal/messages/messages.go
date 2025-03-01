@@ -27,8 +27,7 @@ type MessageService interface {
 	CreateMessage(ctx context.Context, msg *Message) (*Message, error)
 	GetMessageByID(ctx context.Context, ID string) (*Message, error)
 	GetMessagesByUID(ctx context.Context, UID string, offset, limit uint32) (*MessagePage, error)
-	//GetMessages(ctx context.Context) ([]Message, error)
-	//GetPagedMessages(ctx context.Context, offset uint32, limit uint32) (*MessagePage, error)
+	GetPagedMessages(ctx context.Context, offset uint32, limit uint32) (*MessagePage, error)
 	//DeleteMessage(ctx context.Context, ID string) error
 }
 
@@ -36,7 +35,6 @@ type MessageRepository interface {
 	CreateMessage(ctx context.Context, msg *Message) (*Message, error)
 	GetMessageByID(ctx context.Context, ID string) (*Message, error)
 	GetMessagesByUID(ctx context.Context, UID string, offset, limit uint32) (*MessagePage, error)
-	//GetMessages(ctx context.Context) ([]Message, error)
-	//GetPagedMessages(ctx context.Context, offset uint32, limit uint32) (*MessagePage, error)
+	GetPagedMessages(ctx context.Context, offset uint32, limit uint32) (*MessagePage, error)
 	//DeleteMessage(ctx context.Context, ID string) error
 }
