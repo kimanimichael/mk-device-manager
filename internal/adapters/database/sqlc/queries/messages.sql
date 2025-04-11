@@ -15,7 +15,7 @@ ORDER BY created_at DESC OFFSET $2 LIMIT $3;
 SELECT * FROM messages
 ORDER BY created_at ASC;
 
--- name: GetPagedMessages :many
+-- name: GetAllMessages :many
 SELECT * FROM messages ORDER BY created_at DESC
 OFFSET $1 LIMIT $2;
 

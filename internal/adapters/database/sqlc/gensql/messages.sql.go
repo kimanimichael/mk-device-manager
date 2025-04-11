@@ -53,6 +53,44 @@ func (q *Queries) DeleteMessage(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const getAllMessages = `-- name: GetAllMessages :many
+SELECT id, created_at, payload, device_uid FROM messages ORDER BY created_at DESC
+OFFSET $1 LIMIT $2
+`
+
+type GetAllMessagesParams struct {
+	Offset int32
+	Limit  int32
+}
+
+func (q *Queries) GetAllMessages(ctx context.Context, arg GetAllMessagesParams) ([]Message, error) {
+	rows, err := q.db.QueryContext(ctx, getAllMessages, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Message
+	for rows.Next() {
+		var i Message
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.Payload,
+			&i.DeviceUid,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getMessageByID = `-- name: GetMessageByID :one
 SELECT id, created_at, payload, device_uid FROM messages WHERE id = $1
 `
@@ -150,42 +188,4 @@ func (q *Queries) GetMessagesCount(ctx context.Context) (int64, error) {
 	var total int64
 	err := row.Scan(&total)
 	return total, err
-}
-
-const getPagedMessages = `-- name: GetPagedMessages :many
-SELECT id, created_at, payload, device_uid FROM messages ORDER BY created_at DESC
-OFFSET $1 LIMIT $2
-`
-
-type GetPagedMessagesParams struct {
-	Offset int32
-	Limit  int32
-}
-
-func (q *Queries) GetPagedMessages(ctx context.Context, arg GetPagedMessagesParams) ([]Message, error) {
-	rows, err := q.db.QueryContext(ctx, getPagedMessages, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Message
-	for rows.Next() {
-		var i Message
-		if err := rows.Scan(
-			&i.ID,
-			&i.CreatedAt,
-			&i.Payload,
-			&i.DeviceUid,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }

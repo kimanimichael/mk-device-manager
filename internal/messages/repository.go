@@ -85,3 +85,34 @@ func (r *MessageRepositorySQL) GetMessagesByUID(ctx context.Context, UID string,
 	}
 	return messagePage, nil
 }
+
+func (r *MessageRepositorySQL) GetAllMessages(ctx context.Context, offset, limit uint32) (*MessagePage, error) {
+	messages, err := r.DB.GetAllMessages(ctx, sqlcdatabase.GetAllMessagesParams{
+		Offset: int32(offset),
+		Limit:  int32(limit),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch paged messages: %v", err)
+	}
+	var messagesToReturn []Message
+	for _, message := range messages {
+		messagesToReturn = append(messagesToReturn, Message{
+			ID:        message.ID.String(),
+			CreatedAt: message.CreatedAt,
+			Payload:   message.Payload,
+			DeviceUID: message.DeviceUid,
+		})
+	}
+	totalMessages, err := r.DB.GetMessagesCount(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch total messages: %v", err)
+	}
+	pagedMessages := &MessagePage{
+		page{
+			Offset: offset,
+			Total:  uint32(totalMessages),
+		},
+		messagesToReturn,
+	}
+	return pagedMessages, nil
+}

@@ -35,3 +35,11 @@ func (s *messageService) GetMessagesByUID(ctx context.Context, UID string, offse
 	}
 	return messages, nil
 }
+
+func (s *messageService) GetAllMessages(ctx context.Context, offset, limit uint32) (*MessagePage, error) {
+	messages, err := s.repo.GetAllMessages(ctx, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+	return messages, nil
+}

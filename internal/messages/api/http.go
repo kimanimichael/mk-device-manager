@@ -27,6 +27,7 @@ func (h *MessageHandler) RegisterRoutes(router chi.Router) {
 	router.Post("/message/{uid}", h.CreateMessage)
 	router.Get("/message", h.GetMessageByID)
 	router.Get("/messages/{uid}", h.GetDeviceMessagesByUID)
+	router.Get("/messages", h.GetAllMessages)
 }
 
 func (h *MessageHandler) CreateMessage(w http.ResponseWriter, r *http.Request) {
@@ -119,6 +120,27 @@ func (h *MessageHandler) GetDeviceMessagesByUID(w http.ResponseWriter, r *http.R
 	}
 
 	returnedMessages, err := h.service.GetMessagesByUID(ctx, uid, params.Offset, params.Limit)
+	if err != nil {
+		httpresponses.RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	httpresponses.RespondWithJson(w, http.StatusOK, returnedMessages)
+}
+
+func (h *MessageHandler) GetAllMessages(w http.ResponseWriter, r *http.Request) {
+	params := GetMessagesByUIDRequest{}
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&params); err != nil {
+		httpresponses.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("Request body could not be decoded as JSON: %v", err))
+		return
+	}
+	if params.Limit == 0 {
+		httpresponses.RespondWithError(w, http.StatusBadRequest, "Limit field is required")
+		return
+	}
+	ctx := r.Context()
+	returnedMessages, err := h.service.GetAllMessages(ctx, params.Offset, params.Limit)
 	if err != nil {
 		httpresponses.RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
