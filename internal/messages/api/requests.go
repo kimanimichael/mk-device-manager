@@ -10,7 +10,7 @@ type GetMessageByIDRequest struct {
 	EventType string `json:"event_type"`
 }
 
-type GetMessagesByUIDRequest struct {
+type GetMessagesRequest struct {
 	Offset uint32 `json:"offset"`
 	Limit  uint32 `json:"limit"`
 }

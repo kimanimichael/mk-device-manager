@@ -101,7 +101,7 @@ func (h *MessageHandler) GetDeviceMessagesByUID(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	params := GetMessagesByUIDRequest{}
+	params := GetMessagesRequest{}
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&params); err != nil {
 		httpresponses.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("Request body could not be decoded as JSON: %v", err))
@@ -128,7 +128,7 @@ func (h *MessageHandler) GetDeviceMessagesByUID(w http.ResponseWriter, r *http.R
 }
 
 func (h *MessageHandler) GetAllMessages(w http.ResponseWriter, r *http.Request) {
-	params := GetMessagesByUIDRequest{}
+	params := GetMessagesRequest{}
 
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&params); err != nil {
