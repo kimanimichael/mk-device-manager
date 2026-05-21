@@ -2,14 +2,42 @@ package messagesapi
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/go-chi/chi"
 	"github.com/kimanimichael/mk-device-manager/internal/devices"
 	"github.com/kimanimichael/mk-device-manager/internal/messages"
 	"github.com/mike-kimani/fechronizo/v2/pkg/httpresponses"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
+
+const (
+	defaultOffset uint32 = 0
+	defaultLimit  uint32 = 20
+)
+
+func parsePagination(r *http.Request) (uint32, uint32, error) {
+	offset := defaultOffset
+	limit := defaultLimit
+
+	if v := r.URL.Query().Get("offset"); v != "" {
+		parsed, err := strconv.ParseUint(v, 10, 32)
+		if err != nil {
+			return 0, 0, err
+		}
+		offset = uint32(parsed)
+	}
+
+	if v := r.URL.Query().Get("limit"); v != "" {
+		parsed, err := strconv.ParseUint(v, 10, 32)
+		if err != nil {
+			return 0, 0, err
+		}
+		limit = uint32(parsed)
+	}
+
+	return offset, limit, nil
+}
 
 type MessageHandler struct {
 	service       messages.MessageService
@@ -71,22 +99,15 @@ func (h *MessageHandler) CreateMessage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MessageHandler) GetMessageByID(w http.ResponseWriter, r *http.Request) {
-	params := GetMessageByIDRequest{}
-
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&params); err != nil {
-		httpresponses.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("Request body could not be decoded as JSON: %v", err))
-		return
-	}
-
-	if params.ID == "" {
-		httpresponses.RespondWithError(w, http.StatusBadRequest, "ID field is required")
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		httpresponses.RespondWithError(w, http.StatusBadRequest, "id query parameter is required")
 		return
 	}
 
 	ctx := r.Context()
 
-	message, err := h.service.GetMessageByID(ctx, params.ID)
+	message, err := h.service.GetMessageByID(ctx, id)
 	if err != nil {
 		httpresponses.RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -101,25 +122,20 @@ func (h *MessageHandler) GetDeviceMessagesByUID(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	params := GetMessagesRequest{}
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&params); err != nil {
-		httpresponses.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("Request body could not be decoded as JSON: %v", err))
-		return
-	}
-	if params.Limit == 0 {
-		httpresponses.RespondWithError(w, http.StatusBadRequest, "Limit field is required")
+	offset, limit, err := parsePagination(r)
+	if err != nil {
+		httpresponses.RespondWithError(w, http.StatusBadRequest, "Invalid offset or limit query parameter")
 		return
 	}
 
 	ctx := r.Context()
-	_, err := h.deviceService.GetDeviceByUID(ctx, uid)
+	_, err = h.deviceService.GetDeviceByUID(ctx, uid)
 	if err != nil {
 		httpresponses.RespondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	returnedMessages, err := h.service.GetMessagesByUID(ctx, uid, params.Offset, params.Limit)
+	returnedMessages, err := h.service.GetMessagesByUID(ctx, uid, offset, limit)
 	if err != nil {
 		httpresponses.RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -128,19 +144,14 @@ func (h *MessageHandler) GetDeviceMessagesByUID(w http.ResponseWriter, r *http.R
 }
 
 func (h *MessageHandler) GetAllMessages(w http.ResponseWriter, r *http.Request) {
-	params := GetMessagesRequest{}
+	offset, limit, err := parsePagination(r)
+	if err != nil {
+		httpresponses.RespondWithError(w, http.StatusBadRequest, "Invalid offset or limit query parameter")
+		return
+	}
 
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&params); err != nil {
-		httpresponses.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("Request body could not be decoded as JSON: %v", err))
-		return
-	}
-	if params.Limit == 0 {
-		httpresponses.RespondWithError(w, http.StatusBadRequest, "Limit field is required")
-		return
-	}
 	ctx := r.Context()
-	returnedMessages, err := h.service.GetAllMessages(ctx, params.Offset, params.Limit)
+	returnedMessages, err := h.service.GetAllMessages(ctx, offset, limit)
 	if err != nil {
 		httpresponses.RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return

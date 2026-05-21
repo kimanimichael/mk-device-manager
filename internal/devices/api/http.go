@@ -7,7 +7,36 @@ import (
 	"github.com/kimanimichael/mk-device-manager/internal/devices"
 	"github.com/mike-kimani/fechronizo/v2/pkg/httpresponses"
 	"net/http"
+	"strconv"
 )
+
+const (
+	defaultOffset uint32 = 0
+	defaultLimit  uint32 = 20
+)
+
+func parsePagination(r *http.Request) (uint32, uint32, error) {
+	offset := defaultOffset
+	limit := defaultLimit
+
+	if v := r.URL.Query().Get("offset"); v != "" {
+		parsed, err := strconv.ParseUint(v, 10, 32)
+		if err != nil {
+			return 0, 0, err
+		}
+		offset = uint32(parsed)
+	}
+
+	if v := r.URL.Query().Get("limit"); v != "" {
+		parsed, err := strconv.ParseUint(v, 10, 32)
+		if err != nil {
+			return 0, 0, err
+		}
+		limit = uint32(parsed)
+	}
+
+	return offset, limit, nil
+}
 
 type DeviceHandler struct {
 	service devices.DeviceService
@@ -57,22 +86,15 @@ func (h *DeviceHandler) CreateDevice(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *DeviceHandler) GetDeviceFromID(w http.ResponseWriter, r *http.Request) {
-	params := GetDeviceByIDRequest{}
-
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&params); err != nil {
-		httpresponses.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("Request body could not be decoded as JSON: %v", err))
-		return
-	}
-
-	if params.ID == "" {
-		httpresponses.RespondWithError(w, http.StatusBadRequest, "ID field is required")
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		httpresponses.RespondWithError(w, http.StatusBadRequest, "id query parameter is required")
 		return
 	}
 
 	ctx := r.Context()
 
-	device, err := h.service.GetDeviceByID(ctx, params.ID)
+	device, err := h.service.GetDeviceByID(ctx, id)
 	if err != nil {
 		httpresponses.RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -81,22 +103,15 @@ func (h *DeviceHandler) GetDeviceFromID(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *DeviceHandler) GetDeviceFromUID(w http.ResponseWriter, r *http.Request) {
-	params := GetDeviceByUIDRequest{}
-
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&params); err != nil {
-		httpresponses.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("Request body could not be decoded as JSON: %v", err))
-		return
-	}
-
-	if params.UID == "" {
-		httpresponses.RespondWithError(w, http.StatusBadRequest, "UID field is required")
+	uid := r.URL.Query().Get("device_uid")
+	if uid == "" {
+		httpresponses.RespondWithError(w, http.StatusBadRequest, "device_uid query parameter is required")
 		return
 	}
 
 	ctx := r.Context()
 
-	device, err := h.service.GetDeviceByUID(ctx, params.UID)
+	device, err := h.service.GetDeviceByUID(ctx, uid)
 	if err != nil {
 		httpresponses.RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -105,22 +120,15 @@ func (h *DeviceHandler) GetDeviceFromUID(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *DeviceHandler) GetDeviceFromSerial(w http.ResponseWriter, r *http.Request) {
-	params := GetDeviceBySerialRequest{}
-
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&params); err != nil {
-		httpresponses.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("Request body could not be decoded as JSON: %v", err))
-		return
-	}
-
-	if params.Serial == "" {
-		httpresponses.RespondWithError(w, http.StatusBadRequest, "Serial field is required")
+	serial := r.URL.Query().Get("device_serial")
+	if serial == "" {
+		httpresponses.RespondWithError(w, http.StatusBadRequest, "device_serial query parameter is required")
 		return
 	}
 
 	ctx := r.Context()
 
-	device, err := h.service.GetDeviceBySerial(ctx, params.Serial)
+	device, err := h.service.GetDeviceBySerial(ctx, serial)
 	if err != nil {
 		httpresponses.RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -142,15 +150,14 @@ func (h *DeviceHandler) GetDevices(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *DeviceHandler) GetPagedDevices(w http.ResponseWriter, r *http.Request) {
-	params := GetPagedDevicesRequest{}
-
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&params); err != nil {
-		httpresponses.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("failed to decode request body"))
+	offset, limit, err := parsePagination(r)
+	if err != nil {
+		httpresponses.RespondWithError(w, http.StatusBadRequest, "Invalid offset or limit query parameter")
 		return
 	}
+
 	ctx := r.Context()
-	devicesPage, err := h.service.GetPagedDevices(ctx, params.Offset, params.Limit)
+	devicesPage, err := h.service.GetPagedDevices(ctx, offset, limit)
 	if err != nil {
 		httpresponses.RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
